@@ -105,14 +105,10 @@ impl<'a> NvmlTopology<'a> {
                     }
                 },
                 Err(e) => {
-                    println!("Couldn't find nvmlDeviceGetComputeRunningProcesses_v3, got error {}", e);
-                    println!("String of error {}", e.to_string());
-                    // match e {
-                    //     NvmlError::FailedToLoadSymbol(_) => println!("got u: {:?}", e),
-                    // }
-                    // if let Some(e) = crate::sensors::nvml::NvmlError::FailedToLoadSymbol {
-                    //     eprintln!("FailedToLoadSymbol Error: {}", e)
-                    // }
+                    match e {
+                        NvmlError::FailedToLoadSymbol(_) => println!("Process level estimation is not available on this machine.", e),
+                        _ => {}
+                    }
                 }
             }
         }
