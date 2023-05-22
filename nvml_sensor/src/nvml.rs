@@ -1,4 +1,4 @@
-use nvml_wrapper::{error::NvmlError, Nvml, Device};
+use nvml_wrapper::{error::NvmlError, Nvml, Device, struct_wrappers::device::Utilization};
 
 // Like Topology but for nvidia GPU
 // TODO: add that to the usual `Topology`, in `Option<NvmlTopology>` or something like that.
@@ -15,6 +15,7 @@ pub struct NvmlMeasurement {
     device_index: u32,
     consumption_millij: u64,
     instantaneous_power: u32,
+    utilization: Utilization,
 }
 
 impl<'a> NvmlTopology<'a> {
@@ -40,11 +41,13 @@ impl<'a> NvmlTopology<'a> {
         let mut measurements = Vec::new();
         let mut new_previous_measurements = Vec::new();
         for (index, device) in self.devices.iter().enumerate() {
-            let (energy_diff, energy_total) = self.compute_energy_diff(index, device)?;            
+            let (energy_diff, energy_total) = self.compute_energy_diff(index, device)?; 
+            let util = device.utilization_rates()?;           
             let point = NvmlMeasurement {
                 device_index: device.index()?,
                 consumption_millij: energy_diff,
                 instantaneous_power: device.power_usage()?,
+                utilization: util,
             };
             measurements.push(point);
             new_previous_measurements.push(energy_total);
@@ -64,7 +67,7 @@ impl<'a> NvmlTopology<'a> {
         Ok((res, energy_consumption))
     }
 
-    fn print_number_of_active_processes_v2(&self, device: &Device) ->Result<()>  {
+    fn print_number_of_active_processes_v2(&self, device: &Device) -> Result<(), NvmlError>  {
         #[cfg(feature = "legacy-functions")]
         match device.running_compute_processes_v2() {
             Ok(compute_processes) => {
@@ -79,10 +82,11 @@ impl<'a> NvmlTopology<'a> {
                 }
             }
         }
+        Ok(())
     }
 
     // try to use the v3 fn, otherwise try to use the v2 fn
-    fn print_number_of_active_processes(&self, device: &Device) ->Result<()>  {
+    fn print_number_of_active_processes(&self, device: &Device) -> Result<(), NvmlError>  {
         match device.running_compute_processes() {
             Ok(compute_processes) => {
                 for p in compute_processes {
@@ -92,13 +96,14 @@ impl<'a> NvmlTopology<'a> {
             Err(e) => {
                 match e {
                     NvmlError::FailedToLoadSymbol(_) => {
-                        println!("Process level estimation (v3) is not available on this machine.", e),
-                        device.print_number_of_active_processes_v2()
+                        println!("Process level estimation (v3) is not available on this machine.");
+                        // let res = device.print_number_of_active_processes_v2();
                     }
                     _ => {}
                 }
             }
         }
+        Ok(())
     }
 
     pub fn test(&self, ) -> Result<(), NvmlError> {
@@ -125,16 +130,7 @@ impl<'a> NvmlTopology<'a> {
             println!("power: {power_usage} (usage) / {power_limit} (limit)");
             println!("Energy consumed since last driver reload: {total_energy_consumption} (mJ)");
 
-            // println!("Listing processes...");
-            // let compute_processes = device.running_compute_processes()?;
-            // for p in compute_processes {
-            //     println!("Compute process running: {p:?}");
-            // }
-            // let graphic_processes = device.running_graphics_processes()?;
-            // for p in graphic_processes {
-            //     println!("Graphic process running: {p:?}");
-            // }
-
+            self.print_number_of_active_processes(&device)?;
 
         }
         Ok(())
