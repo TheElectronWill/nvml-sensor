@@ -12,6 +12,16 @@ The sensor needs to deal with overflows.
 - compute energy by process
 
 ## State of work
+### Creating a rust appli
+Je me suis un peu perdue dans l'idée d'utiliser Cargo. Voilà là où j'en suis :
+```
+error[E0432]: unresolved import `nvml_sensor::NvmlTopology`
+ --> src/main.rs:3:19
+  |
+3 | use nvml_sensor::{NvmlTopology};
+  |                   ^^^^^^^^^^^^ no `NvmlTopology` in the root
+```
+
 ### Dealing with processes
 On chifflet neither `running_compute_processes` or `running_compute_processes_v2` work. I get a panic error:
 ```
