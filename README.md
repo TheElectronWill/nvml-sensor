@@ -21,4 +21,4 @@ or a compilation error:
 ```
 error[E0599]: no method named `running_compute_processes_count_v2` found for struct `Device` in the current scope
 ```
-I manage to match the result with ok or Err but I can't match the error with FailedToLoadSymbol.
+I manage to match the result with FailedToLoadSymbol. I haven't started working on the compilation error.
