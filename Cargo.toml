@@ -9,3 +9,5 @@ edition = "2021"
 sysinfo = { version = "0.28.3"}
 nvml-wrapper = { version = "0.9.0", features = ["legacy-functions"]}
 time = { version = "0.3", features = ["local-offset", "formatting"] }
+rapl_probes = { path = "../rapl-ebpf-experiments/rapl_probes" }
+anyhow = "1.0.71"
