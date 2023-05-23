@@ -17,4 +17,4 @@ Cargo.lock
 .cargo/
 
 # other
-platforms/
+results/

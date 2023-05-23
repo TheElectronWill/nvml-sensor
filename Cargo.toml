@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 sysinfo = { version = "0.28.3"}
 nvml-wrapper = { version = "0.9.0", features = ["legacy-functions"]}
+time = { version = "0.3", features = ["local-offset", "formatting"] }

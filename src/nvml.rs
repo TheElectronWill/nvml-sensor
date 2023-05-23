@@ -12,15 +12,15 @@ pub struct NvmlTopology<'a> {
 
 #[derive(Debug)]
 pub struct NvmlMeasurement {
-    device_index: u32,
-    consumption_millij: u64,
-    instantaneous_power: u32,
+    pub device_index: u32,
+    pub consumption_millij: u64,
+    pub instantaneous_power: u32,
     // utilization between 0 and 100, and is valid for the last time period
-    utilization: Utilization,
-    util_decoder: UtilizationInfo,
-    util_encoder: UtilizationInfo,
-    compute_processes: Vec<ProcessInfo>,
-    graphic_processes: Vec<ProcessInfo>,
+    pub utilization: Utilization,
+    pub util_decoder: UtilizationInfo,
+    pub util_encoder: UtilizationInfo,
+    pub compute_processes: Vec<ProcessInfo>,
+    pub graphic_processes: Vec<ProcessInfo>,
 }
 
 impl<'a> NvmlTopology<'a> {
