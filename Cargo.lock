@@ -569,6 +569,7 @@ name = "nvml_sensor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap",
  "nvml-wrapper",
  "rapl_probes",
  "sysinfo",
