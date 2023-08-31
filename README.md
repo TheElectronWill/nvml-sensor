@@ -8,11 +8,21 @@ Goal: Retrieve data from NVML including:
 
 The sensor deals with overflows. 
 
+# Install
+Need to clone both this repository and rapl-ebpf-experiments
+```
+# install cargo
+curl https://sh.rustup.rs -sSf | sh
+
+# if need to uninstall
+ rustup self uninstall
+```
+
 # Compile in release mode and run
 
 ```
 cargo build --release
-sudo -E target/release/nvml_sensor --result-dir "results" --period-seconds 1 &
+sudo -E target/release/nvml_sensor --result-dir "/home/mjay/sensors/nvml-sensor/results/" --period-seconds 1 &
 
 pid=$!
 echo "Sensors running with pid $pid"

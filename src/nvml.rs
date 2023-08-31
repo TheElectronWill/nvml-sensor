@@ -1,9 +1,5 @@
 use nvml_wrapper::{error::NvmlError, Nvml, Device, struct_wrappers::device::{Utilization, ProcessInfo}, structs::device::UtilizationInfo};
 
-// Like Topology but for nvidia GPU
-// TODO: add that to the usual `Topology`, in `Option<NvmlTopology>` or something like that.
-// TODO: in the `MetricGenerator`, use that to push new metrics: instant energy and consumption in milli Joules since last time
-// TODO: push the name of the GPU, number of devices, power limit, gpu usage, etc.
 // (TODO): try to get the processes on the GPU and assign them a part of the GPU's consumption
 pub struct NvmlTopology<'a> {
     devices: Vec<Device<'a>>,

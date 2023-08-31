@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use sysinfo::{System, SystemExt, CpuExt};
 use time::OffsetDateTime;
+use std::env;
 
 use nvml_wrapper::{error::NvmlError, Nvml, Device};
 use nvml::{NvmlTopology, NvmlMeasurement};
@@ -50,6 +51,8 @@ struct Arguments {
 }
 
 fn main() -> anyhow::Result<()> {
+    env::set_var("RUST_BACKTRACE", "1");
+    
     let args = Arguments::parse();
     let period = Duration::from_secs_f64(args.period_seconds);
 
@@ -74,9 +77,9 @@ fn main() -> anyhow::Result<()> {
     let rapl_results_path = &format!("{dir}/{intial_time}-rapl.csv");
     let sysinfo_results_path = &format!("{dir}/{intial_time}-sysinfo.csv");
 
-    let mut nvml_file = File::create(nvml_results_path).expect(&format!("failed to open file {nvml_results_path}"));
-    let mut rapl_file = File::create(rapl_results_path).expect(&format!("failed to open file {rapl_results_path}"));
-    let mut sysinfo_file = File::create(sysinfo_results_path).expect(&format!("failed to open file {sysinfo_results_path}"));
+    let mut nvml_file = File::create(nvml_results_path).expect(&format!("failed to create file {nvml_results_path}"));
+    let mut rapl_file = File::create(rapl_results_path).expect(&format!("failed to create file {rapl_results_path}"));
+    let mut sysinfo_file = File::create(sysinfo_results_path).expect(&format!("failed to create file {sysinfo_results_path}"));
 
     // boucle de mesure et construction du CSV au fur et à mesure
     print_csv_header(&mut nvml_file, GPU_CSV_HEADER)?;
