@@ -6,7 +6,7 @@ Goal: Retrieve data from NVML including:
 - instantaneous power and energy consumption since last measurement
 - Other metrics like utilization
 
-The sensor deals with overflows. 
+The sensor deals with overflows. CPU consumption is also returned.
 
 # Install
 Need to clone both this repository and rapl-ebpf-experiments

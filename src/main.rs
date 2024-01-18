@@ -5,8 +5,7 @@ use sysinfo::{System, SystemExt, CpuExt};
 use time::OffsetDateTime;
 use std::env;
 
-use nvml_wrapper::{error::NvmlError, Nvml, Device};
-use nvml::{NvmlTopology, NvmlMeasurement};
+use nvml::NvmlMeasurement;
 
 use rapl_probes::{perf_event, EnergyProbe};
 use clap::Parser;
@@ -52,12 +51,17 @@ struct Arguments {
 
 fn main() -> anyhow::Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    
+
     let args = Arguments::parse();
     let period = Duration::from_secs_f64(args.period_seconds);
+    if period <= Duration::from_secs_f64(0.1) {
+        println!("WARNING: You have chosen a small measurement period, but this tool (like many others) is using the standard sleep function for timing, which is not accurate enough.");
+        println!("WARNING: You may experience incorrect/inaccurate delays between each measurement.");
+        println!("WARNING (solution): Please use ALUMET instead in order to get a precise timing mechanism. You can ask Guillaume for that :)")
+    }
 
     // sonde NVML
-    let nvml = nvml_wrapper::Nvml::init().expect("failed to init nvml, please check your driver");
+    let nvml = nvml_wrapper::Nvml::init().expect("Failed to init nvml, please check your driver (do you have a desktop/server nvidia GPU?)");
     let mut nvidia = nvml::NvmlTopology::new(&nvml).expect("something was wrong");
     let intial_time = current_datetime_str();
 
@@ -66,7 +70,6 @@ fn main() -> anyhow::Result<()> {
     let binding = rapl_probes::perf_event::all_power_events().expect("perf events should be accessible");
     let rapl_events: Vec<&perf_event::PowerEvent> = binding.iter().collect();
     let mut rapl = rapl_probes::perf_event::PerfEventProbe::new(&rapl_cpus, &rapl_events).expect("failed to create rapl probe");
-    let mut rapl_measurements = rapl_probes::EnergyMeasurements::new(rapl_cpus.len());
 
     // SysInfo
     let mut sys = System::new();
@@ -87,20 +90,21 @@ fn main() -> anyhow::Result<()> {
     print_csv_header(&mut sysinfo_file, SYSINFO_CSV_HEADER)?;
     loop {
         let timestamp = SystemTime::now();
-        
+
         // nvml
-        let m_gpu = nvidia.fetch_latest_measurement().expect("where are my measurements ?!");
-        
+        let m_gpu = nvidia.fetch_latest_measurement().expect("Where are my NVML measurements >_< ?!");
+
         // rapl
-        rapl.read_consumed_energy(&mut rapl_measurements)?;
+        rapl.poll().expect("RAPL did not respond appropriately to my request, my heart is broken T_T");
+        let rapl_measurements = rapl.measurements();
 
         // cpu utilization
         sys.refresh_cpu();
-        
+
         // écriture nvml
         write_csv_gpu(&m_gpu, &timestamp, &mut nvml_file)?;
         nvml_file.flush()?;
-        
+
         // écriture rapl
         write_csv_cpu(&rapl_measurements, &timestamp, &mut rapl_file)?;
         rapl_file.flush()?;
@@ -125,9 +129,9 @@ fn write_csv_gpu(measures: &[NvmlMeasurement], timestamp: &SystemTime, file: &mu
     for measure in measures {
         let energy_consumption = measure.consumption_millij;
         let device_index = measure.device_index;
-        let inst_power = measure.instantaneous_power;
-        let gpu_percent = measure.utilization.gpu;
-        let memory_percent = measure.utilization.memory;
+        let inst_power = measure.instantaneous_power.map(|p| p.to_string()).unwrap_or_else(|| String::from("ø"));
+        let gpu_percent = measure.utilization.as_ref().map(|u| u.gpu.to_string()).unwrap_or_else(|| String::from("ø"));
+        let memory_percent = measure.utilization.as_ref().map(|u| u.memory.to_string()).unwrap_or_else(|| String::from("ø"));
         let line = format!("{timestamp_unix};{device_index};{energy_consumption};{inst_power};{gpu_percent};{memory_percent}\n");
         file.write_all(line.as_bytes())?;
     }
@@ -139,11 +143,11 @@ fn write_csv_cpu(measures: &rapl_probes::EnergyMeasurements, timestamp: &SystemT
     for (socket_id, domains) in measures.per_socket.iter().enumerate() {
         for (domain_id, measure) in domains {
             if let Some(joules) = measure.joules {
-                let energy_consumption_since_previous_measurement_milliJ = joules*1000.0;
-                let line = format!("{timestamp_unix};{domain_id:?};{socket_id};{energy_consumption_since_previous_measurement_milliJ}\n");
+                let energy_consumption_since_previous_measurement_millijoules = joules*1000.0;
+                let line = format!("{timestamp_unix};{domain_id:?};{socket_id};{energy_consumption_since_previous_measurement_millijoules}\n");
                 file.write_all(line.as_bytes())?;
             }
-            
+
         }
     }
     Ok(())
@@ -161,18 +165,18 @@ fn write_csv_sysinfo(sys: &mut System, timestamp: &SystemTime, file: &mut File) 
 }
 
 /*
-[NvmlMeasurement { 
-    
-    device_index: 0, 
-    consumption_millij: 93920559, 
-    instantaneous_power: 8612, 
-    utilization: Utilization { gpu: 0, memory: 0 }, 
-    util_decoder: UtilizationInfo { utilization: 0, sampling_period: 167000 }, 
+[NvmlMeasurement {
+
+    device_index: 0,
+    consumption_millij: 93920559,
+    instantaneous_power: 8612,
+    utilization: Utilization { gpu: 0, memory: 0 },
+    util_decoder: UtilizationInfo { utilization: 0, sampling_period: 167000 },
     util_encoder: UtilizationInfo { utilization: 0, sampling_period: 167000 }, c
-    compute_processes: [], 
+    compute_processes: [],
     graphic_processes: [] }
-    
-    , 
-    
+
+    ,
+
 NvmlMeasurement
 */
